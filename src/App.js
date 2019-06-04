@@ -2,15 +2,19 @@ import React, { useReducer, useEffect, useCallback } from "react";
 import StationDisplay from "./StationDisplay";
 // eslint-disable-next-line
 import Bootstrap from "bootstrap/dist/css/bootstrap.css";
-const fetchData = body => {
+const fetchData = async body => {
   let url = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql";
   let opt = {
     method: "POST",
     headers: { "Content-Type": "application/graphql" },
     body: ` ${body}`
   };
-
-  return fetch(url, opt).then(res => res.json());
+  try {
+    const data = await fetch(url, opt);
+    return data.json();
+  } catch (e) {
+    return new Error("failed to fetch");
+  }
 };
 function App() {
   const [state, setState] = useReducer(
@@ -34,13 +38,12 @@ function App() {
         allowDropoff
       }
     }`;
-    const fetch = async () => {
+    (async () => {
       const result = await fetchData(totalStationQuery);
 
-      setState({ totalBike: result.data.bikeRentalStations });
-    };
-
-    fetch();
+      if (!(result instanceof Error))
+        setState({ totalBike: result.data.bikeRentalStations });
+    })();
   }, []);
   const handleSearch = e => {
     if (e.target.value) {
